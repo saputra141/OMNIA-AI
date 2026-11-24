@@ -1,26 +1,33 @@
-# OMNIA-AI
+name: Build Android APK
 
-Platform AI Terintegrasi dengan Dashboard Admin, Backend Cloudflare Workers, dan Aplikasi Android Native.
+on:
+  push:
+    branches: [ "main", "refactor/flat-structure" ]
+  pull_request:
+    branches: [ "main" ]
 
-## Struktur Proyek
-- `/admin`: Dashboard Admin (HTML/JS)
-- `/android`: Aplikasi Android Native (Kotlin/Gradle)
-- `/backend`: API Server (TypeScript/Cloudflare Workers)
-- `/database`: Skema database SQL
-- `/.github`: Workflow CI/CD untuk build APK otomatis
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-## Panduan Pengembangan
+      - name: set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
 
-### Android
-Buka folder `android/` menggunakan Android Studio. Pastikan menggunakan JDK 17.
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
 
-### Backend
-1. Masuk ke folder `backend/`.
-2. Jalankan `npm install`.
-3. Gunakan `npx wrangler dev` untuk pengembangan lokal.
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug
+        working-directory: android
 
-### Admin
-Buka `admin/index.html` di browser atau gunakan live server.
-
----
-© 2024 OMNIA-AI - All Rights Reserved.
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
