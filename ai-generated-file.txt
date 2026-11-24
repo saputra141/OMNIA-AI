@@ -1,0 +1,26 @@
+# OMNIA-AI
+
+Platform AI Terintegrasi dengan Dashboard Admin, Backend Cloudflare Workers, dan Aplikasi Android Native.
+
+## Struktur Proyek
+- `/admin`: Dashboard Admin (HTML/JS)
+- `/android`: Aplikasi Android Native (Kotlin/Gradle)
+- `/backend`: API Server (TypeScript/Cloudflare Workers)
+- `/database`: Skema database SQL
+- `/.github`: Workflow CI/CD untuk build APK otomatis
+
+## Panduan Pengembangan
+
+### Android
+Buka folder `android/` menggunakan Android Studio. Pastikan menggunakan JDK 17.
+
+### Backend
+1. Masuk ke folder `backend/`.
+2. Jalankan `npm install`.
+3. Gunakan `npx wrangler dev` untuk pengembangan lokal.
+
+### Admin
+Buka `admin/index.html` di browser atau gunakan live server.
+
+---
+© 2024 OMNIA-AI - All Rights Reserved.
