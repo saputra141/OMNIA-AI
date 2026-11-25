@@ -1,4 +1,3 @@
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -17,13 +16,12 @@ android {
         versionName = "0.1.0"
     }
 
-    // Samakan target Java ke versi 17
+    // Keep Java and Kotlin bytecode targets aligned.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // Samakan target Kotlin ke versi 17
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -40,8 +38,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
-
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+    // Used by VideoGenerator.kt for video playback.
+    implementation("androidx.media3:media3-exoplayer:1.5.1")
+    implementation("androidx.media3:media3-ui:1.5.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
