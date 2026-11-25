@@ -1,55 +1,80 @@
-/**
- * OMNIA AI Backend - Cloudflare Workers Implementation
- * Tech Stack: TypeScript, Hono-like architecture
- */
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 
-interface Env {
-  DB: any; // Cloudflare D1 Binding
+type Bindings = {
+  DB: D1Database;
+  REPLICATE_API_TOKEN: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.use('*', cors());
+
+// Helper untuk memanggil Replicate
+async function startVideoGen(prompt: string, token: string) {
+  const response = await fetch('https://api.replicate.com/v1/predictions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Token ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      version: "3f0c2727190998f46f3322046200678d45ec19e7a77e8a9f0296726207851e3c", // SVD model
+      input: { prompt: prompt }
+    }),
+  });
+  return await response.json();
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
+// Endpoint untuk request video baru
+app.post('/api/video/generate', async (c) => {
+  const { prompt } = await c.req.json();
+  const token = c.env.REPLICATE_API_TOKEN;
 
-    // CORS Headers
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    };
+  if (!token) return c.json({ error: 'Replicate token not configured' }, 500);
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
+  try {
+    const prediction = await startVideoGen(prompt, token);
+    const taskId = prediction.id;
 
-    try {
-      // API Routes
-      if (path === "/api/stats") {
-        const stats = {
-          totalUsers: 1240,
-          activeRequests: 85,
-          serverHealth: "Optimal",
-          uptime: "99.99%"
-        };
-        return Response.json(stats, { headers: corsHeaders });
-      }
+    await c.env.DB.prepare(
+      'INSERT INTO video_tasks (id, prompt, provider, status) VALUES (?, ?, ?, ?)'
+    ).bind(taskId, prompt, 'replicate', 'processing').run();
 
-      if (path === "/api/users" && request.method === "GET") {
-        // Dummy data for example - Integrate with env.DB.prepare() in production
-        const users = [
-          { id: 1, name: "Admin Omnia", email: "admin@omnia.ai", role: "admin", status: "active" },
-          { id: 2, name: "User Test", email: "user@test.com", role: "user", status: "suspended" }
-        ];
-        return Response.json(users, { headers: corsHeaders });
-      }
+    return c.json({ taskId, status: 'processing' });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
 
-      return new Response("Not Found", { status: 404, headers: corsHeaders });
-    } catch (error: any) {
-      return new Response(JSON.stringify({ error: error.message }), { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      });
-    }
-  },
-};
+// Endpoint untuk cek status video
+app.get('/api/video/status/:id', async (c) => {
+  const id = c.req.param('id');
+  const token = c.env.REPLICATE_API_TOKEN;
+
+  const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+  
+  const data: any = await res.json();
+  let status = data.status; // starting, processing, succeeded, failed
+  let resultUrl = data.output ? data.output[0] : null;
+
+  if (status === 'succeeded') {
+    await c.env.DB.prepare(
+      'UPDATE video_tasks SET status = "completed", result_url = ? WHERE id = ?'
+    ).bind(resultUrl, id).run();
+  }
+
+  return c.json({ id, status, resultUrl });
+});
+
+// List video history
+app.get('/api/video/history', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT * FROM video_tasks ORDER BY created_at DESC LIMIT 20'
+  ).all();
+  return c.json(results);
+});
+
+export default app;
