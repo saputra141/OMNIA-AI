@@ -1,13 +1,16 @@
-CREATE TABLE IF NOT EXISTS video_tasks (
-    id TEXT PRIMARY KEY,
-    prompt TEXT NOT NULL,
-    provider TEXT NOT NULL,
-    status TEXT DEFAULT 'pending', -- pending, processing, completed, failed
-    result_url TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+-- Database Schema for OMNIA AI
+CREATE TABLE IF NOT EXISTS logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    action TEXT,
+    provider TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT
 );
+
+INSERT OR IGNORE INTO settings (key, value) VALUES ('active_video_provider', 'luma');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('maintenance_mode', 'false');

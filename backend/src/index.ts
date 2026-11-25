@@ -1,80 +1,74 @@
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-
-type Bindings = {
+export interface Env {
   DB: D1Database;
-  REPLICATE_API_TOKEN: string;
-};
-
-const app = new Hono<{ Bindings: Bindings }>();
-
-app.use('*', cors());
-
-// Helper untuk memanggil Replicate
-async function startVideoGen(prompt: string, token: string) {
-  const response = await fetch('https://api.replicate.com/v1/predictions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Token ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      version: "3f0c2727190998f46f3322046200678d45ec19e7a77e8a9f0296726207851e3c", // SVD model
-      input: { prompt: prompt }
-    }),
-  });
-  return await response.json();
+  OPENAI_API_KEY: string;
+  GEMINI_API_KEY: string;
+  ADMIN_TOKEN: string;
 }
 
-// Endpoint untuk request video baru
-app.post('/api/video/generate', async (c) => {
-  const { prompt } = await c.req.json();
-  const token = c.env.REPLICATE_API_TOKEN;
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const authHeader = request.headers.get("Authorization");
 
-  if (!token) return c.json({ error: 'Replicate token not configured' }, 500);
+    // CORS Headers
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
 
-  try {
-    const prediction = await startVideoGen(prompt, token);
-    const taskId = prediction.id;
+    if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-    await c.env.DB.prepare(
-      'INSERT INTO video_tasks (id, prompt, provider, status) VALUES (?, ?, ?, ?)'
-    ).bind(taskId, prompt, 'replicate', 'processing').run();
+    try {
+      // --- CHAT ENDPOINT ---
+      if (url.pathname === "/api/chat" && request.method === "POST") {
+        const { prompt, provider = "openai" } = await request.json() as any;
+        
+        let responseText = "";
+        if (provider === "openai") {
+          const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: { 
+              "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
+              "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [{ role: "user", content: prompt }]
+            })
+          });
+          const data = await resp.json() as any;
+          responseText = data.choices[0].message.content;
+        }
 
-    return c.json({ taskId, status: 'processing' });
-  } catch (err: any) {
-    return c.json({ error: err.message }, 500);
-  }
-});
+        await env.DB.prepare("INSERT INTO logs (user_id, action, provider) VALUES (?, ?, ?)")
+          .bind("client_user", "chat", provider).run();
 
-// Endpoint untuk cek status video
-app.get('/api/video/status/:id', async (c) => {
-  const id = c.req.param('id');
-  const token = c.env.REPLICATE_API_TOKEN;
+        return new Response(JSON.stringify({ response: responseText }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-  const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
-    headers: { 'Authorization': `Token ${token}` }
-  });
-  
-  const data: any = await res.json();
-  let status = data.status; // starting, processing, succeeded, failed
-  let resultUrl = data.output ? data.output[0] : null;
+      // --- VIDEO GENERATION ENDPOINT ---
+      if (url.pathname === "/api/generate-video" && request.method === "POST") {
+        const { prompt } = await request.json() as any;
+        // Mocking logic for Video Provider (e.g. Luma/Runway API)
+        const mockVideoUrl = "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4";
+        
+        await env.DB.prepare("INSERT INTO logs (user_id, action, provider) VALUES (?, ?, ?)")
+          .bind("client_user", "video_gen", "luma").run();
 
-  if (status === 'succeeded') {
-    await c.env.DB.prepare(
-      'UPDATE video_tasks SET status = "completed", result_url = ? WHERE id = ?'
-    ).bind(resultUrl, id).run();
-  }
+        return new Response(JSON.stringify({ video_url: mockVideoUrl, status: "completed" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-  return c.json({ id, status, resultUrl });
-});
+      // --- ADMIN: GET LOGS ---
+      if (url.pathname === "/api/admin/logs") {
+        if (authHeader !== `Bearer ${env.ADMIN_TOKEN}`) return new Response("Unauthorized", { status: 401 });
+        const { results } = await env.DB.prepare("SELECT * FROM logs ORDER BY timestamp DESC LIMIT 50").all();
+        return new Response(JSON.stringify(results), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-// List video history
-app.get('/api/video/history', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM video_tasks ORDER BY created_at DESC LIMIT 20'
-  ).all();
-  return c.json(results);
-});
-
-export default app;
+      return new Response("Not Found", { status: 404 });
+    } catch (err: any) {
+      return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    }
+  },
+};

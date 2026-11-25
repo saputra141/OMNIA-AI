@@ -1,226 +1,55 @@
-<!doctype html>
-<html lang="id" class="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;">
-    
-    <title>OMNIA AI | Premium Admin Intelligence</title>
-    
-    <!-- Core Assets -->
+    <title>OMNIA Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f4ff',
-                            100: '#d9e2ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                        },
-                        dark: {
-                            950: '#020617',
-                            900: '#0f172a',
-                            800: '#1e293b',
-                            700: '#334155',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body { 
-            background-color: #020617; 
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
-            min-height: 100vh;
-        }
-
-        .glass { 
-            background: rgba(15, 23, 42, 0.6); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-
-        .sidebar-item {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .sidebar-item:hover, .sidebar-item.active {
-            background: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
-            border-left: 3px solid #6366f1;
-            color: #818cf8;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        #loader.hidden { display: none; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    </style>
 </head>
-<body class="text-slate-200 antialiased overflow-x-hidden">
-    <!-- Main App Container -->
-    <div id="app" class="relative min-h-screen">
-        
-        <!-- Auth View (Hidden by Default) -->
-        <div id="login-screen" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div class="glass w-full max-w-md p-8 rounded-2xl shadow-2xl animate-fade-in">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-primary-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-primary-500/30">
-                        <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
-                    </div>
-                    <h1 class="text-2xl font-extrabold tracking-tight">OMNIA Admin</h1>
-                    <p class="text-slate-400 mt-2 text-sm">Masukkan Admin Token untuk melanjutkan</p>
-                </div>
-                <div class="space-y-4">
-                    <div>
-                        <input type="password" id="admin-token" placeholder="Bearer Token" 
-                            class="w-full bg-dark-900 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-sm">
-                    </div>
-                    <button id="btn-login" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-primary-600/20 active:scale-[0.98]">
-                        Akses Dashboard
-                    </button>
-                </div>
-                <p class="text-center text-xs text-slate-500 mt-6">Protected by OMNIA Security Protocol</p>
+<body class="bg-slate-900 text-white min-h-screen">
+    <nav class="border-b border-slate-800 p-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold tracking-tighter">OMNIA <span class="text-blue-500">CORE</span></h1>
+        <div id="status" class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">System Online</div>
+    </nav>
+
+    <main class="p-6 max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-slate-400 text-sm">Total Requests</p>
+                <h2 id="totalRequests" class="text-3xl font-bold">0</h2>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-slate-400 text-sm">Active Provider</p>
+                <h2 class="text-3xl font-bold text-blue-400">GPT-4o</h2>
+            </div>
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <p class="text-slate-400 text-sm">Security Token</p>
+                <input type="password" id="adminToken" class="bg-transparent border-none text-sm w-full focus:ring-0" placeholder="Enter Token">
             </div>
         </div>
 
-        <!-- Dashboard Layout (Hidden by Default) -->
-        <div id="dashboard-layout" class="hidden flex h-screen overflow-hidden">
-            <!-- Sidebar -->
-            <aside class="w-64 glass border-r border-slate-800 flex flex-col hidden md:flex">
-                <div class="p-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                            <i data-lucide="cpu" class="w-5 h-5 text-white"></i>
-                        </div>
-                        <span class="font-bold text-lg tracking-tight">OMNIA <span class="text-primary-500">AI</span></span>
-                    </div>
-                </div>
-
-                <nav class="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-                    <a href="#" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Ringkasan
-                    </a>
-                    <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400">
-                        <i data-lucide="users" class="w-4 h-4"></i> Pengguna
-                    </a>
-                    <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400">
-                        <i data-lucide="database" class="w-4 h-4"></i> Database D1
-                    </a>
-                    <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400">
-                        <i data-lucide="settings" class="w-4 h-4"></i> Konfigurasi API
-                    </a>
-                </nav>
-
-                <div class="p-4 border-t border-slate-800">
-                    <button id="btn-logout" class="flex items-center gap-3 px-4 py-3 w-full text-left text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                        <i data-lucide="log-out" class="w-4 h-4"></i> Keluar Sistem
-                    </button>
-                </div>
-            </aside>
-
-            <!-- Main Content -->
-            <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <!-- Topbar -->
-                <header class="h-16 glass border-b border-slate-800 flex items-center justify-between px-8 z-10">
-                    <div class="flex items-center gap-4">
-                        <button class="md:hidden text-slate-400"><i data-lucide="menu"></i></button>
-                        <h2 class="font-semibold text-slate-100" id="page-title">Ringkasan Sistem</h2>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
-                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <span class="text-[10px] font-bold text-green-500 uppercase tracking-wider">Cloudflare Online</span>
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Dynamic Content Area -->
-                <div id="content-mount" class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="glass p-6 rounded-2xl">
-                            <p class="text-slate-400 text-sm">Total Request</p>
-                            <h3 class="text-3xl font-bold mt-1" id="stat-requests">0</h3>
-                        </div>
-                        <div class="glass p-6 rounded-2xl">
-                            <p class="text-slate-400 text-sm">Active Models</p>
-                            <h3 class="text-3xl font-bold mt-1 text-primary-400">8</h3>
-                        </div>
-                        <div class="glass p-6 rounded-2xl">
-                            <p class="text-slate-400 text-sm">D1 Database Load</p>
-                            <h3 class="text-3xl font-bold mt-1 text-orange-400">Low</h3>
-                        </div>
-                    </div>
-
-                    <!-- Placeholder for Dynamic Tables/Charts -->
-                    <div class="glass rounded-2xl overflow-hidden border border-slate-800">
-                        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-                            <h4 class="font-bold uppercase text-xs tracking-widest text-slate-500">Log Aktivitas Terbaru</h4>
-                            <button class="text-primary-500 text-xs hover:underline">Refresh Data</button>
-                        </div>
-                        <div class="p-0 overflow-x-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-900/50 text-slate-400 uppercase text-[10px] font-bold tracking-widest">
-                                    <tr>
-                                        <th class="px-6 py-4 whitespace-nowrap">Timestamp</th>
-                                        <th class="px-6 py-4 whitespace-nowrap">Event</th>
-                                        <th class="px-6 py-4 whitespace-nowrap">Status</th>
-                                        <th class="px-6 py-4 whitespace-nowrap">Latency</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="activity-log" class="divide-y divide-slate-800/50">
-                                    <!-- Dynamic Rows via src.js -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-
-        <!-- Global Loader -->
-        <div id="loader" class="fixed inset-0 z-[100] flex items-center justify-center bg-dark-950 transition-opacity duration-500">
-            <div class="relative">
-                <div class="w-16 h-16 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
-                </div>
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="font-semibold">Recent Activity Logs</h3>
+                <button onclick="fetchLogs()" class="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-lg transition">Refresh</button>
             </div>
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-900/50 text-slate-400">
+                    <tr>
+                        <th class="p-4">ID</th>
+                        <th class="p-4">User</th>
+                        <th class="p-4">Action</th>
+                        <th class="p-4">Provider</th>
+                        <th class="p-4">Time</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody">
+                    <!-- Logs injected here -->
+                </tbody>
+            </table>
         </div>
+    </main>
 
-        <!-- Notification Toast Container -->
-        <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2"></div>
-    </div>
-
-    <!-- UI Logic Hook -->
-    <script type="module" src="src.js"></script>
-    <script>
-        // Inisialisasi Lucide Icons segera setelah DOM siap
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
+    <script src="src.js"></script>
 </body>
 </html>
