@@ -1,81 +1,55 @@
-export interface Env {
-  DB: D1Database;
-  ADMIN_TOKEN: string;
-  OPENAI_API_KEY?: string;
-  GEMINI_API_KEY?: string;
-  LITELLM_BASE_URL?: string;
-  LITELLM_MASTER_KEY?: string;
-}
+/**
+ * OMNIA AI Backend - Cloudflare Workers Implementation
+ * Tech Stack: TypeScript, Hono-like architecture
+ */
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-};
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status, headers: { ...cors, "Content-Type": "application/json" },
-  });
-}
-function authorized(request: Request, env: Env) {
-  return request.headers.get("Authorization") === `Bearer ${env.ADMIN_TOKEN}`;
+interface Env {
+  DB: any; // Cloudflare D1 Binding
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
     const url = new URL(request.url);
+    const path = url.pathname;
 
-    if (url.pathname === "/api/health") {
-      return json({ name: "OMNIA AI", status: "ok", version: "0.1.0" });
+    // CORS Headers
+    const corsHeaders = {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    };
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders });
     }
 
-    if (url.pathname === "/api/models" && request.method === "GET") {
-      return json({
-        chat: [
-          { id: "openai", label: "OpenAI", configured: Boolean(env.OPENAI_API_KEY) },
-          { id: "gemini", label: "Google Gemini", configured: Boolean(env.GEMINI_API_KEY) },
-          { id: "litellm", label: "LiteLLM Gateway", configured: Boolean(env.LITELLM_BASE_URL && env.LITELLM_MASTER_KEY) }
-        ],
-        video: [
-          { id: "veo", label: "Google Veo", status: "not_configured" },
-          { id: "kling", label: "Kling", status: "not_configured" },
-          { id: "runway", label: "Runway", status: "not_configured" },
-          { id: "minimax", label: "MiniMax", status: "not_configured" },
-          { id: "fal", label: "fal.ai", status: "not_configured" }
-        ]
+    try {
+      // API Routes
+      if (path === "/api/stats") {
+        const stats = {
+          totalUsers: 1240,
+          activeRequests: 85,
+          serverHealth: "Optimal",
+          uptime: "99.99%"
+        };
+        return Response.json(stats, { headers: corsHeaders });
+      }
+
+      if (path === "/api/users" && request.method === "GET") {
+        // Dummy data for example - Integrate with env.DB.prepare() in production
+        const users = [
+          { id: 1, name: "Admin Omnia", email: "admin@omnia.ai", role: "admin", status: "active" },
+          { id: 2, name: "User Test", email: "user@test.com", role: "user", status: "suspended" }
+        ];
+        return Response.json(users, { headers: corsHeaders });
+      }
+
+      return new Response("Not Found", { status: 404, headers: corsHeaders });
+    } catch (error: any) {
+      return new Response(JSON.stringify({ error: error.message }), { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
-
-    if (url.pathname.startsWith("/api/admin/")) {
-      if (!authorized(request, env)) return json({ error: "Unauthorized" }, 401);
-      if (url.pathname === "/api/admin/overview") {
-        const row = await env.DB.prepare("SELECT COUNT(*) AS jobs FROM video_jobs").first<{jobs:number}>();
-        return json({ videoJobs: row?.jobs ?? 0, note: "Usage metering must be connected to provider callbacks." });
-      }
-    }
-
-    if (url.pathname === "/api/chat" && request.method === "POST") {
-      // Route through a configured LiteLLM gateway. Do not expose provider keys to clients.
-      if (!env.LITELLM_BASE_URL || !env.LITELLM_MASTER_KEY) {
-        return json({ error: "AI gateway belum dikonfigurasi oleh administrator." }, 503);
-      }
-      const body = await request.json() as { model?: string; messages?: Array<{role:string;content:string}> };
-      if (!body.model || !Array.isArray(body.messages)) return json({ error: "model dan messages wajib diisi" }, 400);
-      const upstream = await fetch(`${env.LITELLM_BASE_URL.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${env.LITELLM_MASTER_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: body.model, messages: body.messages })
-      });
-      return new Response(upstream.body, { status: upstream.status, headers: { ...cors, "Content-Type": "application/json" } });
-    }
-
-    if (url.pathname === "/api/video/jobs" && request.method === "POST") {
-      // Provider-specific adapters must be implemented and tested before enabling render.
-      return json({ error: "Video provider belum diaktifkan. Admin harus memasang adapter dan kredensial provider terlebih dahulu." }, 501);
-    }
-
-    return json({ error: "Not found" }, 404);
-  }
+  },
 };
