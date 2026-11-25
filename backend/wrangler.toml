@@ -1,0 +1,11 @@
+name = "omnia-ai-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-15"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "omnia-ai"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+APP_NAME = "OMNIA AI"
