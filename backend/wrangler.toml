@@ -1,11 +1,11 @@
-name = "omnia-ai-api"
+name = "omnia-ai-backend"
 main = "src/index.ts"
-compatibility_date = "2025-01-15"
+compatibility_date = "2023-10-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "omnia-ai"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_name = "omnia_db"
+database_id = "your-db-uuid-here"
 
 [vars]
-APP_NAME = "OMNIA AI"
+API_SECRET = "admin-secret-key"
